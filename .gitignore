@@ -1,0 +1,41 @@
+# --- Local-only working data (never pushed) ---
+# Captured call data, probe tools, vendor findings, raw API dumps, scratch work.
+tmp/
+
+# --- Secrets / local config ---
+.env
+.env.*
+*.local
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+wheels/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Test / coverage / type-check caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

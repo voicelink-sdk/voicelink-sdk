@@ -1,0 +1,1053 @@
+<title>VoiceLink SDK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+
+<style>
+  /* ---------- theme tokens: light (bare :root) ---------- */
+  :root{
+    --bg:#F4F5F6; --surface:#FFFFFF; --surface-2:#EFF0F2;
+    --code-bg:#141619; --code-ink:#E7E8EA; --code-faint:#7E858E;
+    --ink:#16181C; --ink-soft:#565B62; --ink-faint:#8B9098;
+    --line:#E1E3E6; --line-strong:#CBCED3; --chip-ink:#16181C;
+    --shadow:0 1px 2px rgba(20,22,28,.04),0 8px 24px rgba(20,22,28,.05);
+    --sel:#16181C; --sel-ink:#F4F5F6;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D0E10; --surface:#161719; --surface-2:#1D1F22;
+      --code-bg:#08090A; --code-ink:#E7E8EA; --code-faint:#6B727A;
+      --ink:#ECEDEF; --ink-soft:#9BA0A7; --ink-faint:#666C73;
+      --line:#24262A; --line-strong:#34373C; --chip-ink:#ECEDEF;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px rgba(0,0,0,.35);
+      --sel:#ECEDEF; --sel-ink:#0D0E10;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D0E10; --surface:#161719; --surface-2:#1D1F22;
+    --code-bg:#08090A; --code-ink:#E7E8EA; --code-faint:#6B727A;
+    --ink:#ECEDEF; --ink-soft:#9BA0A7; --ink-faint:#666C73;
+    --line:#24262A; --line-strong:#34373C; --chip-ink:#ECEDEF;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px rgba(0,0,0,.35);
+    --sel:#ECEDEF; --sel-ink:#0D0E10;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  ::selection{background:var(--sel); color:var(--sel-ink)}
+  a{color:inherit; text-decoration:none}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:40;
+    display:flex; align-items:center; gap:20px;
+    padding:14px 28px; background:color-mix(in srgb,var(--bg) 86%,transparent);
+    backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
+  }
+  .wordmark{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:15px; letter-spacing:-.01em; display:flex; align-items:center; gap:9px}
+  .wordmark .dot{width:9px; height:9px; background:var(--ink); border-radius:2px; display:inline-block}
+  .topbar .ver{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink-faint); border:1px solid var(--line-strong); border-radius:999px; padding:2px 9px}
+  .topbar .spacer{flex:1}
+  .toggle{
+    font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-soft);
+    background:var(--surface); border:1px solid var(--line-strong); border-radius:8px;
+    padding:7px 12px; cursor:pointer; display:flex; align-items:center; gap:7px;
+  }
+  .toggle:hover{color:var(--ink); border-color:var(--ink-faint)}
+  .toggle:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+
+  /* ---------- shell ---------- */
+  .shell{display:grid; grid-template-columns:250px minmax(0,1fr); max-width:1180px; margin:0 auto}
+  nav.side{
+    position:sticky; top:57px; align-self:start; height:calc(100vh - 57px);
+    overflow-y:auto; padding:36px 20px 60px 28px; border-right:1px solid var(--line);
+  }
+  nav.side .grp{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); margin:22px 0 9px}
+  nav.side .grp:first-child{margin-top:0}
+  nav.side a{
+    display:block; font-size:13.5px; color:var(--ink-soft); padding:5px 10px;
+    border-radius:7px; border-left:2px solid transparent; margin-left:-2px;
+  }
+  nav.side a:hover{color:var(--ink); background:var(--surface-2)}
+  nav.side a.active{color:var(--ink); font-weight:600; border-left-color:var(--ink); background:var(--surface-2)}
+
+  main{padding:0 clamp(24px,5vw,64px) 120px; min-width:0}
+  .wrap{max-width:760px; margin:0 auto}
+
+  /* ---------- hero ---------- */
+  .hero{padding:76px 0 40px; border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 18px}
+  h1.title{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:clamp(38px,7vw,62px); line-height:1.02; letter-spacing:-.03em; margin:0; text-wrap:balance}
+  .lede{font-size:19px; line-height:1.55; color:var(--ink-soft); max-width:60ch; margin:22px 0 30px; text-wrap:pretty}
+  .installline{
+    display:inline-flex; align-items:center; gap:12px; font-family:"IBM Plex Mono",monospace; font-size:14px;
+    background:var(--code-bg); color:var(--code-ink); padding:12px 16px; border-radius:10px;
+  }
+  .installline .sig{color:var(--code-faint)}
+  .installline button{margin-left:4px}
+
+  /* ---------- diagram ---------- */
+  figure.diagram{margin:44px 0 4px; padding:26px; border:1px solid var(--line); border-radius:16px; background:var(--surface); box-shadow:var(--shadow)}
+  figure.diagram svg{width:100%; height:auto; display:block; color:var(--ink)}
+  figure.diagram figcaption{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-faint); margin-top:16px; text-align:center; letter-spacing:.02em}
+
+  /* ---------- sections ---------- */
+  section{padding:52px 0; border-bottom:1px solid var(--line)}
+  section:last-of-type{border-bottom:0}
+  .sec-eyebrow{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 12px}
+  h2{font-size:30px; font-weight:700; letter-spacing:-.02em; margin:0 0 14px; scroll-margin-top:80px; text-wrap:balance}
+  h3{font-size:17px; font-weight:600; margin:34px 0 10px; letter-spacing:-.01em}
+  p{margin:14px 0; color:var(--ink-soft)}
+  p strong,li strong{color:var(--ink); font-weight:600}
+  .lead{font-size:17.5px; color:var(--ink-soft)}
+  ul{margin:14px 0; padding-left:22px; color:var(--ink-soft)}
+  li{margin:7px 0}
+  code:not(pre code){font-family:"IBM Plex Mono",monospace; font-size:.86em; background:var(--surface-2); border:1px solid var(--line); border-radius:5px; padding:.1em .4em; color:var(--ink)}
+
+  /* ---------- code blocks ---------- */
+  .code{position:relative; margin:18px 0; border-radius:12px; overflow:hidden; border:1px solid var(--line); box-shadow:var(--shadow)}
+  .code .bar{display:flex; align-items:center; gap:8px; background:var(--code-bg); padding:9px 14px; border-bottom:1px solid rgba(255,255,255,.06)}
+  .code .lang{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--code-faint)}
+  .code .barspace{flex:1}
+  .code pre{margin:0; background:var(--code-bg); color:var(--code-ink); padding:16px 18px; overflow-x:auto; font-family:"IBM Plex Mono",monospace; font-size:13.5px; line-height:1.7; tab-size:2}
+  .code pre .c{color:var(--code-faint)}   /* comment */
+  .code pre .k{color:#fff; font-weight:600}/* keyword-ish emphasis (mono, monochrome) */
+  .copy{
+    font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--code-faint);
+    background:transparent; border:1px solid rgba(255,255,255,.16); border-radius:6px;
+    padding:4px 9px; cursor:pointer; transition:color .15s,border-color .15s;
+  }
+  .copy:hover{color:#fff; border-color:rgba(255,255,255,.4)}
+  .copy:focus-visible{outline:2px solid #fff; outline-offset:1px}
+  .copy.ok{color:#fff; border-color:rgba(255,255,255,.5)}
+
+  /* ---------- tables ---------- */
+  .tablewrap{overflow-x:auto; margin:18px 0; border:1px solid var(--line); border-radius:12px}
+  table{border-collapse:collapse; width:100%; font-size:14px}
+  th,td{text-align:left; padding:11px 15px; border-bottom:1px solid var(--line); vertical-align:top}
+  thead th{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); background:var(--surface-2)}
+  tbody tr:last-child td{border-bottom:0}
+  td.mono,th.mono{font-family:"IBM Plex Mono",monospace; font-size:13px}
+  td code{white-space:nowrap}
+
+  /* ---------- chips / badges (monochrome: filled vs outline) ---------- */
+  .badge{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; padding:3px 8px; border-radius:999px; display:inline-block; vertical-align:middle}
+  .badge.solid{background:var(--chip-ink); color:var(--bg)}
+  .badge.outline{border:1px solid var(--line-strong); color:var(--ink-soft)}
+
+  /* ---------- callout ---------- */
+  .note{border:1px solid var(--line-strong); border-radius:12px; padding:18px 20px; margin:20px 0; background:var(--surface)}
+  .note.hard{border-width:1.5px; border-color:var(--ink)}
+  .note .ntitle{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink); margin:0 0 8px; display:flex; align-items:center; gap:8px}
+  .note p{margin:6px 0}
+
+  /* ---------- integration cards ---------- */
+  .icards{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0}
+  .icard{border:1px solid var(--line); border-radius:14px; padding:20px; background:var(--surface)}
+  .icard h4{margin:0 0 4px; font-size:16px; font-weight:600; display:flex; align-items:center; gap:9px}
+  .icard .role{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink-faint); letter-spacing:.04em}
+  .icard p{font-size:14px; margin:12px 0 0}
+
+  /* method row */
+  .method{display:flex; gap:12px; align-items:baseline; padding:10px 0; border-bottom:1px dashed var(--line)}
+  .method:last-child{border-bottom:0}
+  .method .sig{font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--ink); font-weight:500}
+  .method .desc{font-size:13.5px; color:var(--ink-soft)}
+
+  footer{max-width:760px; margin:0 auto; padding:40px 0 10px; color:var(--ink-faint); font-size:13px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px}
+  footer .mono{font-size:12px}
+
+  @media (max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav.side{display:none}
+    .icards{grid-template-columns:1fr}
+    .hero{padding:52px 0 32px}
+  }
+</style>
+
+<div class="topbar">
+  <span class="wordmark"><span class="dot"></span>voicelink<span style="color:var(--ink-faint)">/sdk</span></span>
+  <span class="ver">python 3.10+</span>
+  <span class="spacer"></span>
+  <button class="toggle" id="themeToggle" aria-label="Toggle color theme">
+    <span id="themeIcon">◐</span><span id="themeLabel">Theme</span>
+  </button>
+</div>
+
+<div class="shell">
+  <nav class="side" aria-label="Documentation sections">
+    <div class="grp">Start</div>
+    <a href="#overview">Overview</a>
+    <a href="#install">Install</a>
+    <a href="#auth">Authenticate</a>
+    <div class="grp">Core API</div>
+    <a href="#trunks">SIP Trunks</a>
+    <a href="#routing">Call Routing</a>
+    <a href="#calls">Outbound Calls</a>
+    <a href="#bots">WebSocket Bots</a>
+    <a href="#dids">Numbers (DIDs)</a>
+    <a href="#webhooks">Webhooks</a>
+    <div class="grp">Integrations</div>
+    <a href="#livekit">LiveKit</a>
+    <a href="#pipecat">Pipecat</a>
+    <div class="grp">Reference</div>
+    <a href="#restapi">Full REST API</a>
+    <a href="#enums">Enums</a>
+    <a href="#notes">Notes &amp; Gotchas</a>
+  </nav>
+
+  <main>
+    <div class="wrap">
+
+      <!-- HERO -->
+      <header class="hero">
+        <p class="eyebrow">Telephony&nbsp;·&nbsp;Voice&nbsp;AI&nbsp;·&nbsp;Python&nbsp;SDK</p>
+        <h1 class="title">VoiceLink&nbsp;SDK</h1>
+        <p class="lede">Bind VoiceLink phone numbers to voice-AI agents — inbound and outbound — through one clean, typed Python interface. Ships native integrations for <strong>LiveKit</strong> and <strong>Pipecat</strong>.</p>
+        <span class="installline mono"><span class="sig">$</span> pip install voicelink[livekit]
+          <button class="copy" data-copy="pip install voicelink[livekit]">copy</button>
+        </span>
+
+        <figure class="diagram" aria-label="Architecture: two ways VoiceLink connects a call to an agent">
+          <svg viewBox="0 0 900 320" role="img" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono, monospace">
+            <defs>
+              <marker id="arw" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L8,4.5 L0,9 Z" fill="currentColor"/>
+              </marker>
+              <style>
+                .box{fill:var(--surface); stroke:currentColor; stroke-width:1.4}
+                .boxk{fill:var(--ink); stroke:none}
+                .lbl{fill:var(--ink); font-size:13px; font-weight:600}
+                .lblk{fill:var(--bg); font-size:13px; font-weight:600}
+                .sub{fill:var(--ink-faint); font-size:10.5px; letter-spacing:.04em}
+                .wire{stroke:currentColor; stroke-width:1.4; fill:none}
+                .wired{stroke:var(--ink-faint); stroke-width:1.4; fill:none; stroke-dasharray:4 4}
+                .tag{fill:var(--ink-soft); font-size:10.5px}
+              </style>
+            </defs>
+
+            <!-- caller -->
+            <rect class="box" x="16" y="130" width="118" height="60" rx="10"/>
+            <text class="lbl" x="75" y="158" text-anchor="middle">Phone</text>
+            <text class="sub" x="75" y="174" text-anchor="middle">PSTN caller</text>
+
+            <!-- voicelink -->
+            <rect class="boxk" x="196" y="120" width="132" height="80" rx="12"/>
+            <text class="lblk" x="262" y="152" text-anchor="middle">VoiceLink</text>
+            <text x="262" y="170" text-anchor="middle" font-size="10.5" fill="var(--bg)" opacity=".72">carrier · SIP</text>
+
+            <!-- wire caller<->voicelink -->
+            <path class="wire" d="M134,160 L190,160" marker-end="url(#arw)"/>
+            <path class="wire" d="M190,150 L138,150" marker-end="url(#arw)" opacity=".5"/>
+
+            <!-- branch up: LiveKit via bridge -->
+            <path class="wire" d="M328,142 C372,110 372,74 416,74" marker-end="url(#arw)"/>
+            <rect class="box" x="416" y="46" width="120" height="56" rx="10"/>
+            <text class="lbl" x="476" y="70" text-anchor="middle">SIP Bridge</text>
+            <text class="sub" x="476" y="86" text-anchor="middle">plain ↔ TLS</text>
+            <path class="wire" d="M536,74 L604,74" marker-end="url(#arw)"/>
+            <rect class="box" x="604" y="46" width="120" height="56" rx="10"/>
+            <text class="lbl" x="664" y="70" text-anchor="middle">LiveKit</text>
+            <text class="sub" x="664" y="86" text-anchor="middle">Cloud · SIP</text>
+            <path class="wire" d="M724,74 L788,74" marker-end="url(#arw)"/>
+            <text class="tag" x="360" y="34" >MODEL A · SIP — configuration only</text>
+
+            <!-- branch down: Pipecat via websocket -->
+            <path class="wire" d="M328,178 C372,210 372,246 416,246" marker-end="url(#arw)"/>
+            <rect class="box" x="416" y="218" width="120" height="56" rx="10"/>
+            <text class="lbl" x="476" y="242" text-anchor="middle">WebSocket</text>
+            <text class="sub" x="476" y="258" text-anchor="middle">audio stream</text>
+            <path class="wire" d="M536,246 L604,246" marker-end="url(#arw)"/>
+            <rect class="box" x="604" y="218" width="120" height="56" rx="10"/>
+            <text class="lbl" x="664" y="242" text-anchor="middle">Pipecat</text>
+            <text class="sub" x="664" y="258" text-anchor="middle">serializer</text>
+            <path class="wire" d="M724,246 L788,246" marker-end="url(#arw)"/>
+            <text class="tag" x="360" y="298">MODEL B · Media — one serializer</text>
+
+            <!-- agent -->
+            <rect class="box" x="792" y="130" width="92" height="60" rx="10"/>
+            <text class="lbl" x="838" y="158" text-anchor="middle">Agent</text>
+            <text class="sub" x="838" y="174" text-anchor="middle">your bot</text>
+            <path class="wired" d="M788,80 C840,110 840,120 840,128"/>
+            <path class="wired" d="M788,240 C840,210 840,200 840,192"/>
+          </svg>
+          <figcaption>One SDK, two connection models — LiveKit terminates SIP itself (config only), Pipecat streams audio over WebSocket (one media serializer).</figcaption>
+        </figure>
+      </header>
+
+      <!-- OVERVIEW -->
+      <section id="overview">
+        <p class="sec-eyebrow">01 — Overview</p>
+        <h2>Two integration models, one core</h2>
+        <p class="lead">The SDK is a thin, typed layer over VoiceLink's REST API plus purpose-built helpers for each agent framework. The <strong>core</strong> handles auth, numbers, trunks, routing, bots, and calls. Each <strong>integration</strong> adds only what its framework needs — nothing more.</p>
+
+        <div class="icards">
+          <div class="icard">
+            <h4><span class="badge solid">LiveKit</span></h4>
+            <p class="role">connection: SIP trunk</p>
+            <p>LiveKit runs its own SIP service, so this integration is <strong>configuration only</strong> — no media code. The SDK provisions both sides of the trunk and the dispatch rule. Because LiveKit Cloud is TLS-only and VoiceLink speaks plain SIP, calls route through a small <strong>SIP bridge</strong> you run.</p>
+          </div>
+          <div class="icard">
+            <h4><span class="badge outline">Pipecat</span></h4>
+            <p class="role">connection: real-time media</p>
+            <p>Pipecat has no telephony of its own — it expects raw audio over a WebSocket. The SDK ships a <strong>frame serializer</strong> that translates between VoiceLink's wire format and Pipecat, plus a provisioner that registers the bot and routes the number. No SIP, no bridge.</p>
+          </div>
+        </div>
+
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Framework</th><th>Connection</th><th>SDK provides</th><th>Media code</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">LiveKit</td><td>SIP trunk</td><td>Provisioning helpers</td><td>None</td></tr>
+              <tr><td class="mono">Pipecat</td><td>WebSocket</td><td>Frame serializer + provisioner</td><td>Built once</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- INSTALL -->
+      <section id="install">
+        <p class="sec-eyebrow">02 — Install</p>
+        <h2>Install</h2>
+        <p>The core has no framework dependencies. Add an extra only for the integration you use.</p>
+        <div class="code">
+          <div class="bar"><span class="lang">bash</span><span class="barspace"></span><button class="copy" data-copy="pip install voicelink            # core only
+pip install voicelink[livekit]   # + LiveKit
+pip install voicelink[pipecat]   # + Pipecat serializer">copy</button></div>
+<pre><span class="c"># core only — auth, trunks, routing, bots, calls, DIDs</span>
+pip install voicelink
+
+<span class="c"># with an integration extra</span>
+pip install voicelink[livekit]
+pip install voicelink[pipecat]</pre>
+        </div>
+      </section>
+
+      <!-- AUTH -->
+      <section id="auth">
+        <p class="sec-eyebrow">03 — Authenticate</p>
+        <h2>Authenticate</h2>
+        <p>Log in with a username / password, or construct the client directly from an API token. <code>client_id</code> is required for reseller accounts (the client the number belongs to).</p>
+        <div class="code">
+          <div class="bar"><span class="lang">python</span><span class="barspace"></span><button class="copy" data-copy='from voicelink import VoiceLinkClient, UAT_BASE_URL
+
+# UAT / testing
+vl = VoiceLinkClient.login("USER", "PASS", base_url=UAT_BASE_URL, client_id=123)
+
+# Production — omit base_url (defaults to app.voicelink.co.in/api)
+# vl = VoiceLinkClient.login("USER", "PASS", client_id=YOUR_CLIENT_ID)
+
+# Or from an existing token
+# vl = VoiceLinkClient("TOKEN", base_url=UAT_BASE_URL, client_id=123)'>copy</button></div>
+<pre><span class="k">from</span> voicelink <span class="k">import</span> VoiceLinkClient, UAT_BASE_URL
+
+<span class="c"># UAT / testing</span>
+vl = VoiceLinkClient.login(<span>"USER"</span>, <span>"PASS"</span>, base_url=UAT_BASE_URL, client_id=<span>123</span>)
+
+<span class="c"># Production — omit base_url (defaults to app.voicelink.co.in/api)</span>
+<span class="c"># vl = VoiceLinkClient.login("USER", "PASS", client_id=YOUR_CLIENT_ID)</span>
+
+<span class="c"># Or from an existing token</span>
+<span class="c"># vl = VoiceLinkClient("TOKEN", base_url=UAT_BASE_URL, client_id=123)</span></pre>
+        </div>
+        <p>The five you need to connect a number to an agent are <code>vl.sip_trunks</code>, <code>vl.routing</code>, <code>vl.calls</code>, <code>vl.websocket_bots</code> and <code>vl.dids</code>; the client carries twenty-one namespaces in all — see <a href="#restapi">Full REST API</a>. Call <code>vl.close()</code> when done.</p>
+      </section>
+
+      <!-- TRUNKS -->
+      <section id="trunks">
+        <p class="sec-eyebrow">Core API</p>
+        <h2>SIP Trunks</h2>
+        <p>A trunk connects a number to a SIP endpoint — your bridge, or a preset bot provider. For LiveKit you create a <strong>custom</strong> trunk pointing at your bridge.</p>
+
+        <div class="method"><span class="sig">sip_trunks.create_custom(...)</span><span class="desc">custom host / port / transport / codecs / credentials</span></div>
+        <div class="method"><span class="sig">sip_trunks.update(id, ...)</span><span class="desc">repoint host / port / transport / codecs</span></div>
+        <div class="method"><span class="sig">sip_trunks.list()</span><span class="desc">page of trunks (incl. <code>username</code>, <code>registration_password</code>)</span></div>
+        <div class="method"><span class="sig">sip_trunks.create_for_bot_provider(...)</span><span class="desc">preset provider (VAPI / Retell / …)</span></div>
+
+        <div class="code">
+          <div class="bar"><span class="lang">python</span><span class="barspace"></span><button class="copy" data-copy='from voicelink.enums import SipCodec, TransportType
+
+trunk = vl.sip_trunks.create_custom(
+    trunk_name="livekit-bridge",
+    sip_server_host="203.0.113.10",   # your bridge
+    sip_server_port=35060,              # required
+    transport_type=TransportType.UDP,
+    audio_format=[SipCodec.ALAW],
+    # supply your own credentials so the bridge can authenticate outbound:
+    username="trunk_mybridge",
+    registration_password="A-STRONG-SECRET",
+)
+print(trunk.id, trunk.username, trunk.registration_password)'>copy</button></div>
+<pre><span class="k">from</span> voicelink.enums <span class="k">import</span> SipCodec, TransportType
+
+trunk = vl.sip_trunks.create_custom(
+    trunk_name=<span>"livekit-bridge"</span>,
+    sip_server_host=<span>"203.0.113.10"</span>,   <span class="c"># your bridge</span>
+    sip_server_port=<span>35060</span>,              <span class="c"># required</span>
+    transport_type=TransportType.UDP,
+    audio_format=[SipCodec.ALAW],
+    <span class="c"># supply your own credentials so the bridge can authenticate outbound:</span>
+    username=<span>"trunk_mybridge"</span>,
+    registration_password=<span>"A-STRONG-SECRET"</span>,
+)
+print(trunk.id, trunk.username, trunk.registration_password)</pre>
+        </div>
+        <div class="note"><p class="ntitle mono">note</p><p><code>sip_server_host</code> must be unique across your trunks. If you supply <code>username</code>/<code>registration_password</code>, the bridge uses those same credentials to authenticate outbound calls — so pick them yourself rather than letting them auto-generate.</p></div>
+      </section>
+
+      <!-- ROUTING -->
+      <section id="routing">
+        <p class="sec-eyebrow">Core API</p>
+        <h2>Call Routing</h2>
+        <p>One rule per number binds its <strong>inbound</strong> and <strong>outbound</strong> handlers. A handler is a SIP trunk, a WebSocket bot, or (outbound only) “only answer”.</p>
+
+        <div class="method"><span class="sig">routing.create(...)</span><span class="desc">bind a DID to inbound + outbound handlers</span></div>
+        <div class="method"><span class="sig">routing.update(id, ...)</span><span class="desc">change direction / trunk / bot assignment</span></div>
+        <div class="method"><span class="sig">routing.list()</span><span class="desc">rules for the account / client</span></div>
+
+        <div class="code">
+          <div class="bar"><span class="lang">python</span><span class="barspace"></span><button class="copy" data-copy='from voicelink.enums import InboundRoute, OutboundRoute
+
+vl.routing.create(
+    did_number="919876543210",
+    inbound=InboundRoute.SIP_TRUNK,   inbound_sip_trunk_id=trunk.id,
+    outbound=OutboundRoute.SIP_TRUNK, outbound_sip_trunk_id=trunk.id,
+)'>copy</button></div>
+<pre><span class="k">from</span> voicelink.enums <span class="k">import</span> InboundRoute, OutboundRoute
+
+vl.routing.create(
+    did_number=<span>"919876543210"</span>,
+    inbound=InboundRoute.SIP_TRUNK,   inbound_sip_trunk_id=trunk.id,
+    outbound=OutboundRoute.SIP_TRUNK, outbound_sip_trunk_id=trunk.id,
+)</pre>
+        </div>
+      </section>
+
+      <!-- CALLS -->
+      <section id="calls">
+        <p class="sec-eyebrow">Core API</p>
+        <h2>Outbound Calls</h2>
+        <p>VoiceLink-initiated outbound (the <code>add_lead</code> queue): VoiceLink dials the customer and connects them to the number's outbound handler. Used with the WebSocket-bot / Pipecat path.</p>
+        <div class="method"><span class="sig">calls.create(did_number, customer_number, ...)</span><span class="desc">queue a single outbound lead</span></div>
+        <div class="method"><span class="sig">calls.create_bulk(did_number, leads)</span><span class="desc">queue many (async job)</span></div>
+        <div class="code">
+          <div class="bar"><span class="lang">python</span><span class="barspace"></span><button class="copy" data-copy='res = vl.calls.create(
+    did_number="919876543210",
+    customer_number="9000000002",   # national number — no country code
+    country_code="91",              # supplied separately
+    custom_parameters={"campaign": "fall"},
+)
+print(res.outbound_queue_id)'>copy</button></div>
+<pre>res = vl.calls.create(
+    did_number=<span>"919876543210"</span>,
+    customer_number=<span>"9000000002"</span>,   <span class="c"># national number — no country code</span>
+    country_code=<span>"91"</span>,              <span class="c"># supplied separately</span>
+    custom_parameters={<span>"campaign"</span>: <span>"fall"</span>},
+)
+print(res.outbound_queue_id)</pre>
+        </div>
+        <div class="note hard"><p class="ntitle mono">🔒 &nbsp;pass the country code separately</p><p>VoiceLink builds the dial string from <code>customer_number</code> <em>plus</em> <code>country_code</code>. A number with the country code already inside it and no <code>country_code</code> produces a string the carrier cannot route, and the call fails with <code>38 - Network out of order</code> — which reads like a dead carrier rather than a malformed request. Verified live: <code>"919000000001"</code> alone failed with cause 38; <code>"9000000001"</code> with <code>country_code="91"</code> connected normally. <code>PipecatProvisioner.place_call()</code> strips a duplicated code defensively, but <code>calls.create()</code> does not — supply both fields.</p></div>
+      </section>
+
+      <!-- BOTS -->
+      <section id="bots">
+        <p class="sec-eyebrow">Core API</p>
+        <h2>WebSocket Bots</h2>
+        <p>A bot endpoint VoiceLink streams live call audio to over WebSocket — the Pipecat path. <code>l16_16k</code> (16&nbsp;kHz linear PCM) is the recommended format for speech pipelines.</p>
+        <div class="method"><span class="sig">websocket_bots.create(bot_name, websocket_url, ...)</span><span class="desc">register a streaming bot</span></div>
+        <div class="method"><span class="sig">websocket_bots.update(id, ...)</span><span class="desc">change URL / format / status</span></div>
+        <div class="method"><span class="sig">websocket_bots.list()</span><span class="desc">page of bots</span></div>
+        <div class="code">
+          <div class="bar"><span class="lang">python</span><span class="barspace"></span><button class="copy" data-copy='from voicelink.enums import AudioFormat
+
+bot = vl.websocket_bots.create(
+    bot_name="Support",
+    websocket_url="wss://your-server/ws",
+    audio_format=AudioFormat.L16_16K,
+)'>copy</button></div>
+<pre><span class="k">from</span> voicelink.enums <span class="k">import</span> AudioFormat
+
+bot = vl.websocket_bots.create(
+    bot_name=<span>"Support"</span>,
+    websocket_url=<span>"wss://your-server/ws"</span>,
+    audio_format=AudioFormat.L16_16K,
+)</pre>
+        </div>
+      </section>
+
+      <!-- DIDS -->
+      <section id="dids">
+        <p class="sec-eyebrow">Core API</p>
+        <h2>Numbers (DIDs)</h2>
+        <p>Inspect the numbers in your inventory — status, type, and expiry.</p>
+        <div class="method"><span class="sig">dids.list()</span><span class="desc">purchased numbers with status / expiry</span></div>
+        <div class="code">
+          <div class="bar"><span class="lang">python</span><span class="barspace"></span><button class="copy" data-copy='for d in vl.dids.list():
+    print(d.did_number, d.status_label, d.expiry_date, d.is_expired)'>copy</button></div>
+<pre><span class="k">for</span> d <span class="k">in</span> vl.dids.list():
+    print(d.did_number, d.status_label, d.expiry_date, d.is_expired)</pre>
+        </div>
+      </section>
+
+      <!-- WEBHOOKS -->
+      <section id="webhooks">
+        <p class="sec-eyebrow">Core API</p>
+        <h2>Webhooks</h2>
+        <p>VoiceLink POSTs JSON to your configured webhook URL as a call progresses. <code>parse_webhook()</code> turns the raw body (string, bytes, or dict) into a typed <code>WebhookEvent</code>. Always respond <code>200</code> after handling, or VoiceLink may retry.</p>
+        <div class="method"><span class="sig">parse_webhook(body) → WebhookEvent</span><span class="desc">parse a raw webhook body into typed objects</span></div>
+        <div class="code">
+          <div class="bar"><span class="lang">python</span><span class="barspace"></span><button class="copy" data-copy='from voicelink.webhooks import parse_webhook
+from voicelink.enums import CallEvent
+
+# inside your web handler (Flask / FastAPI / etc.)
+event = parse_webhook(request_body)      # str, bytes, or dict
+
+if event.event is CallEvent.COMPLETED:
+    c = event.call
+    print(c.id, c.from_number, "->", c.to_number,
+          c.status, c.duration_sec, "queue:", c.outbound_queue_id)
+
+return 200   # always ack, or VoiceLink retries'>copy</button></div>
+<pre><span class="k">from</span> voicelink.webhooks <span class="k">import</span> parse_webhook
+<span class="k">from</span> voicelink.enums <span class="k">import</span> CallEvent
+
+<span class="c"># inside your web handler (Flask / FastAPI / etc.)</span>
+event = parse_webhook(request_body)      <span class="c"># str, bytes, or dict</span>
+
+<span class="k">if</span> event.event <span class="k">is</span> CallEvent.COMPLETED:
+    c = event.call
+    print(c.id, c.from_number, <span>"->"</span>, c.to_number,
+          c.status, c.duration_sec, <span>"queue:"</span>, c.outbound_queue_id)
+
+<span class="k">return</span> <span>200</span>   <span class="c"># always ack, or VoiceLink retries</span></pre>
+        </div>
+
+        <h3>Event types</h3>
+        <p>The public docs list a flat payload; the real one nests the call under a <code>call</code> key — the SDK maps the delivered shape. <code>event.event</code> is a <code>CallEvent</code> (unknown types pass through as a string).</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>CallEvent</th><th>Fires when</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">INITIATED</td><td>call created / queued</td></tr>
+              <tr><td class="mono">RINGING</td><td>the far end is ringing</td></tr>
+              <tr><td class="mono">ANSWERED</td><td>the call was picked up</td></tr>
+              <tr><td class="mono">ENDED</td><td>the call hung up</td></tr>
+              <tr><td class="mono">FAILED</td><td>the call could not complete</td></tr>
+              <tr><td class="mono">COMPLETED</td><td>terminal event — fires even for failed calls (status carries the outcome)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3><code>event.call</code> fields</h3>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">id</td><td>VoiceLink call id</td></tr>
+              <tr><td class="mono">direction</td><td>inbound / outbound</td></tr>
+              <tr><td class="mono">from_number · to_number</td><td>caller and callee</td></tr>
+              <tr><td class="mono">status · call_status</td><td>call outcome</td></tr>
+              <tr><td class="mono">sip_status · hangup_cause · hangup_reason</td><td>SIP / Q.850 detail</td></tr>
+              <tr><td class="mono">started_at · ringing_at · answered_at · ended_at</td><td>lifecycle timestamps</td></tr>
+              <tr><td class="mono">ring_duration_sec · duration_sec</td><td>durations</td></tr>
+              <tr><td class="mono">outbound_queue_id</td><td>correlate back to <code>calls.create(...)</code></td></tr>
+              <tr><td class="mono">legs[]</td><td>per-channel detail (<code>CallLeg</code>: sip_status, hangup_reason, ring/answer/end time)</td></tr>
+              <tr><td class="mono">custom_parameters</td><td>whatever you passed on <code>calls.create</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note"><p class="ntitle mono">note</p><p>Set the destination with <code>webhook_url=</code> when you create the bot (or on the routing). <code>RINGING</code> and <code>FAILED</code> are emitted by the platform but absent from the public docs.</p></div>
+      </section>
+
+      <!-- LIVEKIT -->
+      <section id="livekit">
+        <p class="sec-eyebrow">Integration</p>
+        <h2><span class="badge solid" style="vertical-align:middle">LiveKit</span>&nbsp; Configuration only</h2>
+        <p class="lead">Provision both sides of a LiveKit SIP connection and place agent calls. LiveKit terminates SIP and RTP itself — this layer never touches call audio.</p>
+
+        <div class="method"><span class="sig">create_inbound_trunk(name, numbers, allowed_addresses)</span><span class="desc">accept calls from your bridge</span></div>
+        <div class="method"><span class="sig">create_dispatch_rule(trunk_ids, agent_name, room_prefix)</span><span class="desc">room per call + dispatch agent (inbound)</span></div>
+        <div class="method"><span class="sig">create_outbound_trunk(name, address, numbers, transport, codecs)</span><span class="desc">dial out via your bridge</span></div>
+        <div class="method"><span class="sig">dispatch_agent(room_name, agent_name)</span><span class="desc">put the agent in an outbound room</span></div>
+        <div class="method"><span class="sig">place_call(sip_trunk_id, call_to, room_name, participant_identity)</span><span class="desc">ring a number into a room</span></div>
+
+        <h3>Inbound — caller → agent</h3>
+        <div class="code">
+          <div class="bar"><span class="lang">python</span><span class="barspace"></span><button class="copy" data-copy='from voicelink.integrations.livekit import LiveKitProvisioner
+from voicelink.enums import SipCodec, TransportType, InboundRoute, OutboundRoute
+
+async with LiveKitProvisioner(
+    livekit_url="wss://YOURPROJECT.livekit.cloud",
+    api_key="LK_KEY", api_secret="LK_SECRET", voicelink=vl,
+) as prov:
+    trunk = await prov.create_inbound_trunk(
+        name="voicelink-inbound",
+        numbers=["919876543210"],
+        allowed_addresses=["203.0.113.10/32"],   # SECURITY: only your bridge
+    )
+    await prov.create_dispatch_rule(
+        trunk_ids=[trunk.sip_trunk_id],
+        agent_name="voice-assistant", room_prefix="call-",
+    )
+    # VoiceLink side: trunk -> bridge, route the DID to it
+    vlt = prov.create_voicelink_trunk(
+        trunk_name="livekit-inbound",
+        sip_server_host="203.0.113.10", sip_server_port=35060,
+        transport_type=TransportType.UDP, audio_format=[SipCodec.ALAW],
+        username="trunk_in", registration_password="SECRET",
+    )
+    vl.routing.create(
+        did_number="919876543210",
+        inbound=InboundRoute.SIP_TRUNK,  inbound_sip_trunk_id=vlt.id,
+        outbound=OutboundRoute.SIP_TRUNK, outbound_sip_trunk_id=vlt.id,
+    )'>copy</button></div>
+<pre><span class="k">from</span> voicelink.integrations.livekit <span class="k">import</span> LiveKitProvisioner
+<span class="k">from</span> voicelink.enums <span class="k">import</span> SipCodec, TransportType, InboundRoute, OutboundRoute
+
+<span class="k">async with</span> LiveKitProvisioner(
+    livekit_url=<span>"wss://YOURPROJECT.livekit.cloud"</span>,
+    api_key=<span>"LK_KEY"</span>, api_secret=<span>"LK_SECRET"</span>, voicelink=vl,
+) <span class="k">as</span> prov:
+    trunk = <span class="k">await</span> prov.create_inbound_trunk(
+        name=<span>"voicelink-inbound"</span>,
+        numbers=[<span>"919876543210"</span>],
+        allowed_addresses=[<span>"203.0.113.10/32"</span>],   <span class="c"># SECURITY: only your bridge</span>
+    )
+    <span class="k">await</span> prov.create_dispatch_rule(
+        trunk_ids=[trunk.sip_trunk_id],
+        agent_name=<span>"voice-assistant"</span>, room_prefix=<span>"call-"</span>,
+    )
+    <span class="c"># VoiceLink side: trunk -> bridge, route the DID to it</span>
+    vlt = prov.create_voicelink_trunk(
+        trunk_name=<span>"livekit-inbound"</span>,
+        sip_server_host=<span>"203.0.113.10"</span>, sip_server_port=<span>35060</span>,
+        transport_type=TransportType.UDP, audio_format=[SipCodec.ALAW],
+        username=<span>"trunk_in"</span>, registration_password=<span>"SECRET"</span>,
+    )
+    vl.routing.create(
+        did_number=<span>"919876543210"</span>,
+        inbound=InboundRoute.SIP_TRUNK,  inbound_sip_trunk_id=vlt.id,
+        outbound=OutboundRoute.SIP_TRUNK, outbound_sip_trunk_id=vlt.id,
+    )</pre>
+        </div>
+
+        <h3>Outbound — agent → callee</h3>
+        <div class="code">
+          <div class="bar"><span class="lang">python</span><span class="barspace"></span><button class="copy" data-copy='async with LiveKitProvisioner(...) as prov:
+    trunk = await prov.create_outbound_trunk(
+        name="voicelink-outbound",
+        address="203.0.113.10:35060",   # your bridge, not VoiceLink directly
+        numbers=["919876543210"],
+        transport=TransportType.UDP, codecs=[SipCodec.ALAW],
+    )
+    await prov.dispatch_agent(room_name="outbound-1", agent_name="voice-assistant")
+    await prov.place_call(
+        sip_trunk_id=trunk.sip_trunk_id,
+        call_to="+919876543210",          # country code required
+        room_name="outbound-1", participant_identity="callee",
+        wait_until_answered=False,
+    )'>copy</button></div>
+<pre><span class="k">async with</span> LiveKitProvisioner(...) <span class="k">as</span> prov:
+    trunk = <span class="k">await</span> prov.create_outbound_trunk(
+        name=<span>"voicelink-outbound"</span>,
+        address=<span>"203.0.113.10:35060"</span>,   <span class="c"># your bridge, not VoiceLink directly</span>
+        numbers=[<span>"919876543210"</span>],
+        transport=TransportType.UDP, codecs=[SipCodec.ALAW],
+    )
+    <span class="k">await</span> prov.dispatch_agent(room_name=<span>"outbound-1"</span>, agent_name=<span>"voice-assistant"</span>)
+    <span class="k">await</span> prov.place_call(
+        sip_trunk_id=trunk.sip_trunk_id,
+        call_to=<span>"+919876543210"</span>,          <span class="c"># country code required</span>
+        room_name=<span>"outbound-1"</span>, participant_identity=<span>"callee"</span>,
+        wait_until_answered=<span>False</span>,
+    )</pre>
+        </div>
+
+        <div class="note hard"><p class="ntitle mono">🔒 &nbsp;security — lock the inbound trunk</p><p>Your LiveKit project has a public SIP address. Never leave an inbound trunk at <code>allowed_addresses=["0.0.0.0/0"]</code> with no auth — SIP scanners <em>will</em> find it and flood it with fake calls, each spinning up a room and an agent that runs up your bill. Always restrict to your <strong>bridge IP</strong> and your <strong>DID</strong>.</p></div>
+      </section>
+
+      <!-- PIPECAT -->
+      <section id="pipecat">
+        <p class="sec-eyebrow">Integration</p>
+        <h2><span class="badge outline" style="vertical-align:middle">Pipecat</span>&nbsp; Media serializer</h2>
+        <p class="lead">The mirror image of LiveKit: no SIP, no bridge. VoiceLink streams call audio to your Pipecat server over WebSocket, and the SDK's serializer translates the wire format both ways.</p>
+
+        <h3>Provision the number</h3>
+        <p><code>PipecatProvisioner</code> registers the bot and routes the DID in one idempotent call. It returns a <code>Provisioned</code> record of what changed (safe to re-run).</p>
+        <div class="method"><span class="sig">setup_inbound(bot_name, websocket_url, did, ...)</span><span class="desc">register bot + route inbound</span></div>
+        <div class="method"><span class="sig">setup_outbound(bot_name, websocket_url, did, ...)</span><span class="desc">register bot + route outbound</span></div>
+        <div class="method"><span class="sig">place_call(did, customer_number, country_code, ...)</span><span class="desc">dial out (add_lead)</span></div>
+        <div class="method"><span class="sig">restore_previous(provisioned)</span><span class="desc">undo a change made in this process</span></div>
+        <div class="method"><span class="sig">restore_sip_trunk(did, sip_trunk_id, inbound, outbound)</span><span class="desc">hand a DID back to a SIP trunk, either or both directions</span></div>
+        <div class="method"><span class="sig">route_inbound_to_bot(did, bot_id) · route_outbound_to_bot(did, bot_id)</span><span class="desc">change one direction, leaving the other untouched</span></div>
+        <div class="method"><span class="sig">ensure_bot(bot_name, websocket_url, ...)</span><span class="desc">create or update the bot only, without routing</span></div>
+        <div class="method"><span class="sig">find_bot(bot_name) · find_routing(did)</span><span class="desc">read-only lookups</span></div>
+        <div class="code">
+          <div class="bar"><span class="lang">python</span><span class="barspace"></span><button class="copy" data-copy='from voicelink.integrations.pipecat import PipecatProvisioner
+
+prov = PipecatProvisioner(vl)
+p = prov.setup_inbound(
+    bot_name="Support",
+    websocket_url="wss://your-pipecat-server/ws",
+    did="919876543210",
+)
+print(p.bot.id, p.routing.id, p.bot_created)'>copy</button></div>
+<pre><span class="k">from</span> voicelink.integrations.pipecat <span class="k">import</span> PipecatProvisioner
+
+prov = PipecatProvisioner(vl)
+p = prov.setup_inbound(
+    bot_name=<span>"Support"</span>,
+    websocket_url=<span>"wss://your-pipecat-server/ws"</span>,
+    did=<span>"919876543210"</span>,
+)
+print(p.bot.id, p.routing.id, p.bot_created)</pre>
+        </div>
+
+        <h3>Wire the serializer into your Pipecat pipeline</h3>
+        <p><code>VoiceLinkFrameSerializer</code> plugs into a Pipecat WebSocket transport — it handles VoiceLink's JSON-with-base64-G.711 dialect so your pipeline sees plain audio frames.</p>
+        <div class="code">
+          <div class="bar"><span class="lang">python</span><span class="barspace"></span><button class="copy" data-copy='from voicelink.integrations.pipecat import VoiceLinkFrameSerializer
+
+serializer = VoiceLinkFrameSerializer()
+
+# pass it to your Pipecat WebSocket transport params:
+#   FastAPIWebsocketParams(serializer=serializer, ...)
+# the transport now speaks VoiceLink; your pipeline stays framework-standard.'>copy</button></div>
+<pre><span class="k">from</span> voicelink.integrations.pipecat <span class="k">import</span> VoiceLinkFrameSerializer
+
+serializer = VoiceLinkFrameSerializer()
+
+<span class="c"># pass it to your Pipecat WebSocket transport params:</span>
+<span class="c">#   FastAPIWebsocketParams(serializer=serializer, ...)</span>
+<span class="c"># the transport now speaks VoiceLink; your pipeline stays standard.</span></pre>
+        </div>
+        <div class="note"><p class="ntitle mono">note</p><p>Requires the extra: <code>pip install voicelink[pipecat]</code>. For <em>outbound</em>, the DID's outbound handler must point at an <strong>active</strong> WebSocket bot — <code>add_lead</code> refuses to dial otherwise. Pipecat's FastAPI transport needs its own extra: <code>pip install "pipecat-ai[websocket]"</code>.</p></div>
+        <div class="note"><p class="ntitle mono">audio format is advisory</p><p>The <code>audio_format</code> you set on the bot is <strong>not</strong> necessarily what VoiceLink streams. A bot configured <code>l16_16k</code> was observed sending <code>audio/alaw</code> at 8&nbsp;kHz — confirmed twice: in the raw frames, and by every media frame being exactly 160 bytes (16&nbsp;kHz PCM would be 640). <code>VoiceLinkFrameSerializer</code> therefore reads <code>media_format</code> from each call's <code>start</code> frame at runtime and adapts, so a mismatch is harmless. Do not rely on the configured value in your own code.</p></div>
+        <div class="note"><p class="ntitle mono">restoring a shared number</p><p><code>restore_previous(p)</code> only works inside the same process, since <code>p</code> lives in memory. To hand a DID back in a <em>later</em> run — the usual case when a number is shared with a LiveKit deployment — use <code>restore_sip_trunk(did=…, sip_trunk_id=…)</code>, which restores <strong>both</strong> directions by default. Restoring only inbound leaves outbound calls still routed to the bot.</p></div>
+        <div class="note hard"><p class="ntitle mono">🔒 &nbsp;leave “WebSocket API” switched OFF</p><p>The bot's <strong>WebSocket API</strong> toggle in the portal must stay <strong>off</strong>. With it on, VoiceLink answers the call and hangs up in under a second without ever opening the media WebSocket — verified by A/B test on a live call (cause code 32, zero frames received). The REST API exposes no field for it, so the SDK cannot set it; bots inherit the platform default. <strong>If a bot receives no audio, check this toggle first.</strong></p></div>
+      </section>
+
+      <!-- REST API -->
+      <section id="restapi">
+        <p class="sec-eyebrow">Reference</p>
+        <h2>Full REST API</h2>
+        <p class="lead"><strong>Every VoiceLink endpoint — all 82 — now has a typed SDK method.</strong> Each is grouped into a resource namespace on the client. The tables below are the endpoint catalog; the map shows which namespace covers each.</p>
+
+        <div class="tablewrap"><table>
+          <thead><tr><th>Namespace</th><th>Covers</th><th>Example methods</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">vl.auth</td><td>Session &amp; account</td><td class="mono">me · logout · forgot_password · reset_password · verify_otp</td></tr>
+            <tr><td class="mono">vl.sip_trunks</td><td>SIP trunks</td><td class="mono">create_custom · update · list · bot_providers</td></tr>
+            <tr><td class="mono">vl.websocket_bots</td><td>Streaming bots</td><td class="mono">create · list · update</td></tr>
+            <tr><td class="mono">vl.routing</td><td>Call routing</td><td class="mono">create · update · list</td></tr>
+            <tr><td class="mono">vl.calls</td><td>Outbound leads</td><td class="mono">create · create_bulk</td></tr>
+            <tr><td class="mono">vl.dids</td><td>Numbers</td><td class="mono">list · available_for_client · release · types · request_purchase</td></tr>
+            <tr><td class="mono">vl.call_logs</td><td>Call records</td><td class="mono">details · pcap</td></tr>
+            <tr><td class="mono">vl.agents</td><td>Desk agents</td><td class="mono">create · list · update · delete</td></tr>
+            <tr><td class="mono">vl.sounds</td><td>Audio prompts</td><td class="mono">create · list · update · delete</td></tr>
+            <tr><td class="mono">vl.time_settings</td><td>Time windows</td><td class="mono">create · list · update · delete</td></tr>
+            <tr><td class="mono">vl.call_settings</td><td>Per-number behaviour</td><td class="mono">create · list · update · delete</td></tr>
+            <tr><td class="mono">vl.clients</td><td>Reseller clients</td><td class="mono">list · create · update · delete · map_did · allocate_wallet</td></tr>
+            <tr><td class="mono">vl.sub_users</td><td>Sub-users</td><td class="mono">list · create · get · update · delete · sync_permissions</td></tr>
+            <tr><td class="mono">vl.reseller</td><td>Reseller account</td><td class="mono">profile · signup</td></tr>
+            <tr><td class="mono">vl.purchase</td><td>Buy numbers</td><td class="mono">available_dids · lock_did · add_channel · promocode · summary · confirm</td></tr>
+            <tr><td class="mono">vl.renewals</td><td>Renew</td><td class="mono">list · summary · confirm</td></tr>
+            <tr><td class="mono">vl.kyc</td><td>Onboarding</td><td class="mono">status · step1_register … step4_gst · final_submit</td></tr>
+            <tr><td class="mono">vl.websocket_management</td><td>Bot queues</td><td class="mono">list · pause · resume · remove</td></tr>
+            <tr><td class="mono">vl.websocket_time_groups</td><td>Bot availability</td><td class="mono">create · list · update · delete</td></tr>
+            <tr><td class="mono">vl.payments</td><td>Tally invoicing</td><td class="mono">new_payments · update_payments</td></tr>
+          </tbody>
+        </table></div>
+
+        <p>So the whole API is typed — no raw HTTP needed. A few admin examples:</p>
+        <div class="code">
+          <div class="bar"><span class="lang">python</span><span class="barspace"></span><button class="copy" data-copy='vl.agents.create(first_name="Ada", last_name="L", phone_number="919111111111")
+
+vl.clients.create(first_name="A", last_name="B", username="ab",
+                  email="a@b.com", password="pw", channel_count=2)
+
+vl.call_settings.create(routing_type=2, welcome_sound_id=7, time_setting_id=3)
+
+log = vl.call_logs.details("666850547e52233a...")
+
+vl.purchase.available_dids(country_code="91", did_type="mobile", months=12)'>copy</button></div>
+<pre>vl.agents.create(first_name=<span>"Ada"</span>, last_name=<span>"L"</span>, phone_number=<span>"919111111111"</span>)
+
+vl.clients.create(first_name=<span>"A"</span>, last_name=<span>"B"</span>, username=<span>"ab"</span>,
+                  email=<span>"a@b.com"</span>, password=<span>"pw"</span>, channel_count=<span>2</span>)
+
+vl.call_settings.create(routing_type=<span>2</span>, welcome_sound_id=<span>7</span>, time_setting_id=<span>3</span>)
+
+log = vl.call_logs.details(<span>"666850547e52233a..."</span>)
+
+vl.purchase.available_dids(country_code=<span>"91"</span>, did_type=<span>"mobile"</span>, months=<span>12</span>)</pre>
+        </div>
+        <p>Still need a brand-new endpoint the SDK doesn't know yet? The transport escape hatch remains: <code>vl._transport.request("GET", "/v1/…", params=…, json=…)</code>.</p>
+
+        <h3>Authentication &amp; User</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>SDK</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">POST</td><td class="mono">/v1/auth/login</td><td>Log in, returns access token</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/auth/logout</td><td>Revoke the current token</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/auth/user</td><td>Get the authenticated user's profile</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/auth/forgot-password</td><td>Send a password-reset link</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/auth/reset-password</td><td>Reset password with the emailed token</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/auth/verify-otp</td><td>Confirm an email with its OTP</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/auth/resend-otp</td><td>Resend the email OTP</td><td><span class="badge solid">SDK</span></td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Telephony — Trunks, Bots, Routing</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>SDK</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">POST</td><td class="mono">/v1/sip-trunk/create</td><td>Create a SIP trunk (custom or bot-provider)</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/sip-trunk/list</td><td>List SIP trunks</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/sip-trunk/update/{id}</td><td>Update a SIP trunk</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/sip-trunk/bot-provider/list</td><td>List preset bot providers</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/websocket-bot/create</td><td>Register a WebSocket bot</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/websocket-bot/list</td><td>List WebSocket bots</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/websocket-bot/update/{id}</td><td>Update a WebSocket bot</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/call-routing/create</td><td>Bind a DID to inbound/outbound handlers</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/call-routing/list</td><td>List routing rules</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/call-routing/update/{id}</td><td>Update a routing rule</td><td><span class="badge solid">SDK</span></td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Calls &amp; Logs</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>SDK</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">POST</td><td class="mono">/v1/add_lead</td><td>Queue one or more outbound leads</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/call-log/details</td><td>Get details for one call (<code>call_id</code>)</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/call-log/pcap</td><td>Download the SIP capture (PCAP) for a call</td><td><span class="badge solid">SDK</span></td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Agents</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">POST</td><td class="mono">/v1/agent/create</td><td>Create an agent</td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/agent/list</td><td>List agents</td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/agent/update/{id}</td><td>Update an agent</td></tr>
+            <tr><td class="mono">DELETE</td><td class="mono">/v1/agent/delete/{id}</td><td>Delete an agent</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Numbers, Purchase &amp; Renewal</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>SDK</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">GET</td><td class="mono">/v1/reseller/did/purchased</td><td>List purchased DIDs</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/did/release</td><td>Release DID(s)</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/reseller/did-types</td><td>List active DID types</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/reseller/did-purchase-request</td><td>List DID purchase requests</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/did-purchase-request</td><td>Submit a DID purchase request</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/reseller/purchase/dids</td><td>List DIDs available to purchase</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/purchase/lock-did</td><td>Lock DIDs, create/update a draft order</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/purchase/add-channel</td><td>Add channels to an order</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/purchase/promocode</td><td>Apply or remove a promocode</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/reseller/purchase/summary/{orderId}</td><td>Get order summary</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/purchase/confirm</td><td>Confirm a purchase order</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/reseller/renew/list</td><td>List renewable DIDs and channels</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/renew/summary</td><td>Get renewal summary</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/renew/confirm</td><td>Confirm a renewal</td><td><span class="badge solid">SDK</span></td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Reseller &amp; Clients</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>SDK</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/signup</td><td>Reseller signup</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/reseller/profile</td><td>Get reseller profile</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/reseller/clients</td><td>List the reseller's clients</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/client/create</td><td>Create a client under the reseller</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/client/update/{client_id}</td><td>Update a client</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">DELETE</td><td class="mono">/v1/reseller/client/delete/{client_id}</td><td>Delete a client</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/client/map-did</td><td>Map a DID to a client</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/client/allocate-wallet/{client_id}</td><td>Move wallet balance to a client</td><td><span class="badge solid">SDK</span></td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/reseller/client/available-dids</td><td>DIDs available for client mapping</td><td><span class="badge solid">SDK</span></td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>KYC (reseller onboarding)</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">GET</td><td class="mono">/v1/reseller/kyc/status</td><td>Get KYC status</td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/kyc/step-1-register-details</td><td>Step 1 — register details</td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/kyc/step-2-pan-verify</td><td>Step 2 — PAN verification</td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/kyc/step-3-aadhaar-init</td><td>Step 3 — start Aadhaar verification</td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/reseller/kyc/step-3-aadhaar-callback</td><td>Step 3 — DigiLocker callback</td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/kyc/step-4-gst-verify</td><td>Step 4 — GST verification (business)</td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/reseller/kyc/final-submit</td><td>Confirm KYC completion</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Sounds, Time &amp; Call Settings</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">POST · GET · POST · DELETE</td><td class="mono">/v1/sound/{create · list · update/{id} · delete/{id}}</td><td>Manage audio prompts / sounds</td></tr>
+            <tr><td class="mono">POST · GET · POST · DELETE</td><td class="mono">/v1/time-setting/{create · list · update/{id} · delete/{id}}</td><td>Time-of-day routing windows</td></tr>
+            <tr><td class="mono">POST · GET · POST · DELETE</td><td class="mono">/v1/call-setting/{create · list · update/{id} · delete/{id}}</td><td>Per-number call behaviour</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Sub-users &amp; Permissions</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">GET</td><td class="mono">/v1/sub-user</td><td>List sub-users</td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/sub-user</td><td>Create a sub-user</td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/v1/sub-user/{id}</td><td>Show a sub-user</td></tr>
+            <tr><td class="mono">PUT</td><td class="mono">/v1/sub-user/{id}</td><td>Update a sub-user</td></tr>
+            <tr><td class="mono">DELETE</td><td class="mono">/v1/sub-user/{id}</td><td>Delete a sub-user</td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/sub-user/{id}/permissions</td><td>Sync a sub-user's permissions</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>WebSocket Management &amp; Time Groups</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">GET</td><td class="mono">/v1/websocket-management/list</td><td>List the WebSocket queue by client</td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/websocket-management/pause/{clientId}</td><td>Pause a client's queue</td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/websocket-management/resume/{clientId}</td><td>Resume a client's queue</td></tr>
+            <tr><td class="mono">DELETE</td><td class="mono">/v1/websocket-management/remove/{clientId}</td><td>Remove a client's queue</td></tr>
+            <tr><td class="mono">POST · GET · POST · DELETE</td><td class="mono">/v1/websocket-time-group/{create · list · update/{id} · delete/{id}}</td><td>Bot availability time groups</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Payments (Tally integration)</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">GET</td><td class="mono">/v1/get-new-payments</td><td>Successful top-ups awaiting an invoice</td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/v1/update-payments</td><td>Record invoices Tally generated</td></tr>
+          </tbody>
+        </table></div>
+
+        <div class="note"><p class="ntitle mono">scope</p><p>The SDK covers the <strong>entire</strong> VoiceLink API — telephony, call logs, agents, IVR settings, reseller &amp; client management, sub-users, DID purchase / renewal, KYC, and billing — all as typed methods sharing one auth and error layer. List endpoints return a <code>Page</code>; single operations return the API's <code>data</code> payload.</p></div>
+      </section>
+
+      <!-- ENUMS -->
+      <section id="enums">
+        <p class="sec-eyebrow">Reference</p>
+        <h2>Enums</h2>
+        <p>All from <code>voicelink.enums</code>. Integer enums subclass <code>int</code> and string enums subclass <code>str</code>, so a member serializes to the raw API value automatically.</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Enum</th><th>Members</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">TransportType</td><td class="mono">UDP=1 · TCP=2 · TLS=3</td></tr>
+              <tr><td class="mono">SipCodec</td><td class="mono">ALAW · ULAW · G722 · G729</td></tr>
+              <tr><td class="mono">AudioFormat</td><td class="mono">ALAW · ULAW · L16 · L16_16K <span class="badge outline">recommended</span></td></tr>
+              <tr><td class="mono">InboundRoute</td><td class="mono">MOBILE=1 · SIP_TRUNK=2 · WEBSOCKET_BOT=3</td></tr>
+              <tr><td class="mono">OutboundRoute</td><td class="mono">SIP_TRUNK=2 · WEBSOCKET_BOT=3 · ONLY_ANSWER=4</td></tr>
+              <tr><td class="mono">Status</td><td class="mono">INACTIVE=0 · ACTIVE=1</td></tr>
+              <tr><td class="mono">NoiseCancel</td><td class="mono">OFF=0 · ON=1</td></tr>
+              <tr><td class="mono">CallDirection</td><td class="mono">INBOUND · OUTBOUND</td></tr>
+              <tr><td class="mono">CallEvent</td><td class="mono">INITIATED · RINGING · ANSWERED · ENDED · FAILED · COMPLETED</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- NOTES -->
+      <section id="notes">
+        <p class="sec-eyebrow">Reference</p>
+        <h2>Notes &amp; Gotchas</h2>
+        <p>Hard-won details that save hours of debugging.</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+            <tbody>
+              <tr><td>Direct VoiceLink→LiveKit trunk: <code>CHANUNAVAIL</code></td><td>VoiceLink can't do LiveKit's TLS SIP</td><td>Point both trunks at the <strong>bridge</strong>, never at each other</td></tr>
+              <tr><td>Outbound <code>603 Declined</code> (after <code>100 Trying</code>)</td><td>Wrong host, no auth, or no country code</td><td>Target the <strong>termination server</strong>, authenticate, dial <code>+CC…</code></td></tr>
+              <tr><td>Outbound <code>401 Unauthorized</code></td><td>Termination server wants auth</td><td>Bridge outbound auth = trunk <code>username</code>/<code>password</code></td></tr>
+              <tr><td>Call connects but silent</td><td>No agent worker running</td><td>Start the worker registered as your <code>agent_name</code></td></tr>
+              <tr><td>Flood of unknown inbound calls</td><td>Inbound trunk open to <code>0.0.0.0/0</code></td><td>Lock to bridge IP + your DID (see security note)</td></tr>
+              <tr><td>Trunk create: <code>host already in use</code></td><td><code>sip_server_host</code> must be unique</td><td>Reuse / repoint the existing trunk</td></tr>
+              <tr><td><strong>Pipecat</strong> — outbound fails <code>38 - Network out of order</code></td><td>Country code inside <code>customer_number</code> and no <code>country_code</code></td><td>Pass the <strong>national</strong> number plus <code>country_code="91"</code> separately</td></tr>
+              <tr><td><strong>Pipecat</strong> — call answers then drops in &lt;1s, cause <code>32</code></td><td>Bot's <strong>WebSocket API</strong> toggle is on, or the <code>wss://</code> host is unreachable</td><td>Switch the toggle off; confirm your server answers before dialling</td></tr>
+              <tr><td><strong>Pipecat</strong> — call answered but completely silent</td><td>Tunnel/host is up but the bot process is down</td><td>Restart the bot — a live host with no listener answers, then plays nothing</td></tr>
+              <tr><td><strong>Pipecat</strong> — logs show <code>alaw @ 8000</code> though the bot is set to <code>l16_16k</code></td><td>VoiceLink ignores the configured <code>audio_format</code></td><td>Nothing to do — the serializer reads <code>media_format</code> from the <code>start</code> frame and adapts</td></tr>
+              <tr><td><strong>Pipecat</strong> — bot exits by itself after ~5 minutes idle</td><td>Pipecat's <code>PipelineTask</code> idle timeout, not the SDK</td><td>Start the bot shortly before dialling, or raise the timeout</td></tr>
+              <tr><td><strong>Pipecat</strong> — only the first call of a batch connects</td><td><code>WebsocketServerTransport</code> serves one client at a time</td><td>Use Pipecat's FastAPI transport, or dial with <code>call_limit=1</code></td></tr>
+              <tr><td><strong>Pipecat</strong> — restored the DID but outbound still hits the bot</td><td>An inbound-only restore leaves the other direction pointed at the bot</td><td><code>restore_sip_trunk(...)</code> — it restores both directions by default</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note"><p class="ntitle mono">the SIP bridge</p><p>LiveKit's TLS-only SIP is the sole reason the bridge exists. It terminates VoiceLink's plain SIP and re-originates to LiveKit over TLS (inbound), and authenticates to VoiceLink's termination server (outbound). It is infrastructure you run — see the separate bridge setup guide.</p></div>
+      </section>
+
+      <footer>
+        <span class="mono">voicelink · python sdk</span>
+        <span class="mono">core + livekit + pipecat</span>
+      </footer>
+    </div>
+  </main>
+</div>
+
+<script>
+  // ---- theme toggle (light / dark / system), persisted best-effort ----
+  (function(){
+    var root=document.documentElement, btn=document.getElementById('themeToggle');
+    var icon=document.getElementById('themeIcon'), label=document.getElementById('themeLabel');
+    var order=['system','light','dark'];
+    function saved(){ try{return localStorage.getItem('vl-theme')||'system'}catch(e){return 'system'} }
+    function apply(t){
+      if(t==='system'){ root.removeAttribute('data-theme'); icon.textContent='◐'; label.textContent='System'; }
+      else{ root.setAttribute('data-theme',t); icon.textContent=(t==='dark'?'●':'○'); label.textContent=t[0].toUpperCase()+t.slice(1); }
+    }
+    var cur=saved(); apply(cur);
+    btn.addEventListener('click',function(){
+      cur=order[(order.indexOf(cur)+1)%order.length];
+      try{localStorage.setItem('vl-theme',cur)}catch(e){}
+      apply(cur);
+    });
+  })();
+
+  // ---- copy buttons (clipboard API, execCommand fallback) ----
+  document.querySelectorAll('.copy').forEach(function(b){
+    b.addEventListener('click',function(){
+      var text=b.getAttribute('data-copy');
+      if(text===null){ var pre=b.closest('.code'); text=pre?pre.querySelector('pre').innerText:''; }
+      function ok(){ var t=b.textContent; b.textContent='copied ✓'; b.classList.add('ok'); setTimeout(function(){b.textContent=t;b.classList.remove('ok')},1300); }
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(ok).catch(fallback);
+      } else { fallback(); }
+      function fallback(){
+        try{ var ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+          document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); ok(); }catch(e){}
+      }
+    });
+  });
+
+  // ---- scroll-spy for the sidebar ----
+  (function(){
+    var links=[].slice.call(document.querySelectorAll('nav.side a'));
+    var map={}; links.forEach(function(a){ map[a.getAttribute('href').slice(1)]=a; });
+    var obs=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){
+          links.forEach(function(l){l.classList.remove('active')});
+          var a=map[en.target.id]; if(a) a.classList.add('active');
+        }
+      });
+    },{rootMargin:'-45% 0px -50% 0px'});
+    document.querySelectorAll('section[id]').forEach(function(s){obs.observe(s)});
+  })();
+</script>

@@ -1,0 +1,3 @@
+interface:
+  display_name: "VoiceLink LiveKit SIP"
+  short_description: "Connect VoiceLink calls to LiveKit voice agents"
