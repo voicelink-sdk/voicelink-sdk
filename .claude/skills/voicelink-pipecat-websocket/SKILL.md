@@ -41,7 +41,13 @@ These were established on live calls, and several contradict VoiceLink's own doc
 ## Workflow
 
 Both scripts in `assets/` read a `.env` in the current directory, so copy them and
-`assets/env.example` into the user's project and run everything from there.
+`assets/env.example` into the user's project and run everything from there. Start the bot
+server with its log in that same folder (e.g. `bot.log`).
+
+If the current folder is the **voicelink-sdk repo itself** (it contains `voicelink/` and
+`.claude/skills/`), don't copy into the repo root: use a `pipecat-demo/` folder and add the
+line `pipecat-demo/` to `.git/info/exclude` - a local-only ignore - so the copied scripts,
+`.env` and `bot.log` never show up in source control and `.gitignore` stays unchanged.
 
 1. **Install** from the voicelink-sdk repo root (the SDK is not assumed to be on PyPI):
    ```bash

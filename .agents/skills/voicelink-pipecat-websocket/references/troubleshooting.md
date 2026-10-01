@@ -41,6 +41,8 @@ upgrade reached it and what status your server returned.
 | Connected, never speaks, no errors | Pipeline never started | `runner.add_workers(worker)` not awaited, or greeting not queued | `await runner.add_workers(worker)`; queue the greeting in `on_client_connected` |
 | Long pause before the bot's first word | Slow STT/TTS connection per call | Provider far from callers | Use a nearby provider (Sarvam ~0.25 s vs Deepgram ~1.4 s from India) |
 | Server exits at start | `…_PROVIDER is not set` / `…_API_KEY` / provider not installed | Missing config | Set the provider + key in `.env`; `pip install "pipecat-ai[<provider>]"` |
+| Server exits at start with an invalid-model error | Error names `STT_MODEL` / `TTS_MODEL` | Model name the installed Pipecat no longer accepts (e.g. Sarvam `saarika:v2.5` on 1.12+) | Use a current name (`saaras:v3`) or leave the model blank for the default |
+| Copied scripts and `bot.log` show up in source control | `git status` lists them | Scripts copied into the voicelink-sdk repo root | Use a `pipecat-demo/` folder listed in `.git/info/exclude` (see SKILL.md) |
 | Outbound `38 - Network out of order` | CDR hangup cause 38 | Country code inside the number and not passed separately | `customer_number` national + `country_code="91"` |
 | Outbound refused by the API | Error mentions the WebSocket bot | DID's outbound half not on an active bot | Run `setup_outbound` first |
 | Routing rejects the bot ("not valid, not active") | 4xx on routing | Bot inactive | Update the bot with `status=Status.ACTIVE` (the provisioner does) |
