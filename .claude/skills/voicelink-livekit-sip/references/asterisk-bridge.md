@@ -215,6 +215,7 @@ contact=sip:YOUR_PROJECT_ID.sip.livekit.cloud:5061\;transport=tls
 [livekit-in]
 type=endpoint
 context=from-livekit
+transport=transport-udp   ; pin it: the transport bound to YOUR_SIP_PORT with the external addresses
 disallow=all
 allow=alaw
 allow=ulaw
@@ -259,6 +260,10 @@ password=YOUR_TRUNK_PASSWORD
 ```
 
 **Notes**
+- **Pin `transport=` on every endpoint**, including `[livekit-in]`. With several transports
+  (UDP + TLS, or two UDP ports), Asterisk may answer on one whose address/port VoiceLink
+  cannot reach. Symptom: outbound calls work, but the callee's hang-up never arrives and
+  LiveKit ends the call 15 s later with `media-timeout` (verified on a live deployment).
 - `force_rport` + `rtp_symmetric` + `rewrite_contact` are what make SIP/RTP survive NAT and
   asymmetric routing — keep them on.
 - Inbound is **IP-authenticated** (VoiceLink's IP is on the allowlist). Outbound needs

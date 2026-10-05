@@ -2,6 +2,10 @@
 
 Four provisioning steps plus the agent. Run them in this order.
 
+Runnable form: `python provision_inbound.py` does steps 1-4 and is safe to re-run - it
+reuses or corrects existing objects instead of duplicating them. `python check_setup.py`
+verifies the result. The snippets below show what each step does.
+
 ## 1. LiveKit inbound trunk — the guest list
 
 LiveKit's SIP endpoint is public and accepts nothing by default. The inbound trunk declares which
@@ -10,7 +14,7 @@ numbers are yours and which source IPs may send calls. Without it the bridge's I
 ```python
 trunk = await prov.create_inbound_trunk(
     name="voicelink-inbound",
-    numbers=[DID],                               # e.g. "919876543210"
+    numbers=[DID],                               # e.g. "91XXXXXXXXXX"
     allowed_addresses=[f"{BRIDGE_HOST}/32"],     # only the bridge may call in
 )
 # trunk.sip_trunk_id  -> "ST_..."
@@ -72,7 +76,7 @@ Each DID has exactly one rule.
 vl.routing.create(
     did_number=DID,
     inbound=InboundRoute.SIP_TRUNK,  inbound_sip_trunk_id=vl_trunk.id,
-    outbound=OutboundRoute.SIP_TRUNK, outbound_sip_trunk_id=vl_trunk.id,
+    outbound=OutboundRoute.ONLY_ANSWER,   # NOT SIP_TRUNK - see outbound.md
 )
 ```
 

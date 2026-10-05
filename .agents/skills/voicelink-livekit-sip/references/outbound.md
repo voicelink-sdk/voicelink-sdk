@@ -3,6 +3,10 @@
 LiveKit cannot originate directly to VoiceLink (declined `603`), so its outbound trunk targets the
 **bridge**. The bridge re-originates to VoiceLink's **termination server** with SIP digest auth.
 
+Runnable form: `python provision_outbound.py` creates or corrects the LiveKit outbound trunk
+and routes the DID's outbound half to the bridge trunk; `--call` then dispatches the agent
+and dials `CALL_COUNTRY_CODE` + `CALL_TO`. Safe to re-run.
+
 ## Why outbound needs auth when inbound didn't
 
 Inbound is IP-authenticated: VoiceLink sends *to you*, low risk. Outbound spends money on
@@ -12,6 +16,14 @@ this is the direction toll-fraud targets. Keep those credentials only in the bri
 VoiceLink usually has two hosts: a signalling host (answers locally, never reaches PSTN) and a
 termination host (needs auth, rings real phones). Pointing the bridge at the signalling host
 looks like "call answered instantly, nothing rings" — use the termination host.
+
+## VoiceLink routing for outbound: ONLY_ANSWER, never the SIP trunk
+
+The bridge places the call itself, over the trunk. Set the DID's outbound route to
+`OutboundRoute.ONLY_ANSWER`. With it set to `SIP_TRUNK`, VoiceLink sends the *answered* call
+back to the bridge as a new inbound call: LiveKit shows two calls, the real one fails with
+`media-timeout`, and the callee is dropped after ~45 s while talking to the wrong agent.
+Verified on a live call; `provision_outbound.py` sets ONLY_ANSWER.
 
 ## 1. LiveKit outbound trunk → bridge
 

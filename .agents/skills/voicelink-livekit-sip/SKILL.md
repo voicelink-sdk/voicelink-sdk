@@ -30,27 +30,40 @@ If the user has no bridge yet, build it first — read `references/asterisk-brid
 
 ## Workflow
 
-1. **Confirm inputs.** You need: VoiceLink login (user/pass or token) + `client_id` (reseller
-   accounts require it), the DID, LiveKit URL/key/secret, the bridge's public host + SIP port,
-   and the agent name. Template: `assets/env.example`.
-2. **Make sure the bridge exists and is reachable** (`references/asterisk-bridge.md`).
-3. **Provision inbound** with the SDK — `references/inbound.md`.
-4. **Run the agent worker** — `assets/livekit_agent.py`. Its `agent_name` must equal the
-   dispatch rule's `agent_name`, or calls land in an empty room.
-5. **Provision outbound** if needed — `references/outbound.md`.
-6. **Verify** with a real call and the SDK read-backs; if it fails, go to
-   `references/troubleshooting.md`. Diagnose from evidence (bridge SIP trace, VoiceLink CDR)
-   rather than guessing — the failure modes look alike from the caller's side.
+Copy every file in `assets/` (the scripts import `_common.py`) plus a filled `.env` into one
+folder and run from there. Inside the voicelink-sdk repo itself, use a `livekit-demo/` folder
+listed in `.git/info/exclude` so copies, `.env` and logs never reach source control. Never ask
+the user to paste secrets into chat - they edit `.env`.
+
+1. **Install** from the voicelink-sdk repo root: `pip install -e ".[livekit]"`, then
+   `pip install "livekit-agents[deepgram,openai,silero]" python-dotenv` (plus
+   `livekit-plugins-groq` / `livekit-plugins-sarvam` if `.env` chooses them).
+2. **Fill `.env`** from `assets/env.example`: VoiceLink login + `VOICELINK_CLIENT_ID` (reseller
+   accounts: the client that owns the DID), the DID, LiveKit URL/key/secret, the bridge's
+   **public IPv4** + SIP port, the agent name, and the agent's STT/LLM/TTS providers + keys.
+3. **Make sure the bridge exists and is reachable** (`references/asterisk-bridge.md`). It must
+   forward inbound calls to this LiveKit project's SIP URI.
+4. **Check current state (read-only):** `python check_setup.py`.
+5. **Provision inbound:** `python provision_inbound.py` - LiveKit inbound trunk, dispatch rule,
+   VoiceLink trunk and inbound routing. Safe to re-run; it reuses or corrects what exists.
+6. **Run the agent worker:** `python livekit_agent.py dev`. Its `LIVEKIT_AGENT_NAME` must
+   equal the dispatch rule's agent, or calls land in an empty room. Then the user calls the DID.
+7. **Outbound**, if wanted: `python provision_outbound.py` (LiveKit outbound trunk + outbound
+   routing), then - only after the user confirms, because it dials a real number and spends
+   balance - `python provision_outbound.py --call`.
+8. **If anything fails**, run `check_setup.py` again and go to `references/troubleshooting.md`.
+   Diagnose from evidence (bridge SIP trace, VoiceLink CDR) rather than guessing - the failure
+   modes look alike from the caller's side.
 
 ## SDK essentials
 
 ```python
-from voicelink import BASE_URL, VoiceLinkClient
+from voicelink import DEFAULT_BASE_URL, UAT_BASE_URL, VoiceLinkClient   # production / UAT
 from voicelink.enums import InboundRoute, OutboundRoute, SipCodec, Status, TransportType
 from voicelink.integrations.livekit import LiveKitProvisioner   # pip install "voicelink[livekit]"
 
-vl = VoiceLinkClient.login(USER, PASS, base_url=BASE_URL, client_id=CLIENT_ID)  # sync
-# or: VoiceLinkClient(token, base_url=BASE_URL, client_id=CLIENT_ID)
+vl = VoiceLinkClient.login(USER, PASS, base_url=DEFAULT_BASE_URL, client_id=CLIENT_ID)  # sync
+# or: VoiceLinkClient(token, base_url=UAT_BASE_URL, client_id=CLIENT_ID)
 
 async with LiveKitProvisioner(livekit_url=URL, api_key=KEY, api_secret=SECRET,
                               voicelink=vl) as prov:          # async
@@ -83,6 +96,10 @@ Enums: `InboundRoute.SIP_TRUNK=2`, `OutboundRoute.SIP_TRUNK=2`, `TransportType.U
 - **Always set `allowed_addresses=[f"{bridge_ip}/32"]` on the LiveKit inbound trunk.** An open
   trunk (`0.0.0.0/0`, no auth) gets found by SIP scanners within hours; every junk call spins
   up a room and an agent and costs money. This happened on a real deployment.
+- **Turn the VoiceLink trunk's Peer Monitoring ON** in the portal (SIP Trunk Management ->
+  edit trunk) after it is created. The API cannot set it; with it off, VoiceLink marks the
+  trunk unreachable and inbound calls fail with "out of network coverage" (`CHANUNAVAIL`).
+  Remind the user every time `provision_inbound.py` creates a trunk.
 - **Always pass `sip_server_port`** on the VoiceLink trunk. Omitting it produces a dead trunk.
   Use the port the bridge actually receives on — behind consumer NAT, 5060 is often ISP-blocked,
   so a high port such as 35060 is common. The VoiceLink trunk port, the bridge's bind port and
@@ -92,6 +109,11 @@ Enums: `InboundRoute.SIP_TRUNK=2`, `OutboundRoute.SIP_TRUNK=2`, `TransportType.U
   termination host needs the trunk's username/password. Ask VoiceLink which is which.
 - **Dial with the country code** on outbound (e.g. `91XXXXXXXXXX`); the bridge adds VoiceLink's
   tech prefix itself.
+- **Outbound route = `ONLY_ANSWER`, never `SIP_TRUNK`.** The bridge originates over the trunk;
+  a `SIP_TRUNK` outbound route bounces every answered call back to the bridge as a second call
+  that drops after ~45 s. Inbound stays `SIP_TRUNK`.
+- **Run one agent worker per `LIVEKIT_AGENT_NAME`.** LiveKit hands each call to any worker with
+  that name, so a forgotten copy elsewhere silently takes calls.
 - **Order matters:** LiveKit trunk before dispatch rule; VoiceLink trunk before routing.
 - **No delete endpoints** for VoiceLink trunks or routing — deactivate via `update(status=Status.INACTIVE)`.
 - **Don't trust VoiceLink `*_label` fields** — derive meaning from the enum integers.
@@ -103,6 +125,11 @@ Enums: `InboundRoute.SIP_TRUNK=2`, `OutboundRoute.SIP_TRUNK=2`, `TransportType.U
 - `references/outbound.md` — outbound trunk, agent dispatch, placing a call.
 - `references/asterisk-bridge.md` — building the bridge (pjsip.conf, extensions.conf, rtp.conf, Docker, NAT).
 - `references/troubleshooting.md` — symptom → evidence → fix table and diagnostic commands.
-- `assets/env.example` — environment variables.
-- `assets/livekit_agent.py` — minimal LiveKit agent worker.
-- `assets/provision_inbound.py` — runnable end-to-end inbound provisioning script.
+- `assets/env.example` — every setting, copied to `.env`.
+- `assets/check_setup.py` — read-only check of both platforms; flags known misconfigurations.
+- `assets/provision_inbound.py` — inbound: LiveKit inbound trunk + dispatch rule, VoiceLink
+  trunk + inbound routing. Re-runnable.
+- `assets/provision_outbound.py` — outbound: LiveKit outbound trunk + outbound routing;
+  `--call` places a test call. Re-runnable.
+- `assets/livekit_agent.py` — agent worker; STT/LLM/TTS providers chosen in `.env`.
+- `assets/_common.py` — shared helpers the scripts import; keep it next to them.
