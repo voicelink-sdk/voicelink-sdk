@@ -1,0 +1,14 @@
+{
+  "name": "voicelink",
+  "description": "Skills that connect VoiceLink phone numbers to AI voice agents (LiveKit and Pipecat).",
+  "owner": {
+    "name": "VoiceLink SDK"
+  },
+  "plugins": [
+    {
+      "name": "voicelink",
+      "source": "./",
+      "description": "VoiceLink skills for LiveKit and Pipecat voice agents."
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "name": "voicelink",
+  "description": "Connect a VoiceLink phone number to an AI voice agent - LiveKit (over a SIP bridge) or Pipecat (over VoiceLink's WebSocket media stream) - using the VoiceLink Python SDK.",
+  "version": "0.1.0",
+  "author": { "name": "VoiceLink SDK" },
+  "skills": ["./.claude/skills/"]
+}
